@@ -1,5 +1,5 @@
 import { useState } from "react";
-import axios from "axios";
+import api from "../api";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
@@ -19,8 +19,8 @@ function Login() {
         setLoading(true);
 
         try {
-            const response = await axios.post(
-                "/api/login",
+            const response = await api.post(
+                "/login",
                 {
                     username,
                     password,

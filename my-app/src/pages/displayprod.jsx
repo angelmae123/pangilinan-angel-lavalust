@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../api";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
@@ -19,7 +19,7 @@ function DisplayProd() {
                 return;
             }
 
-            const response = await axios.get("/api/products", {
+            const response = await api.get("/products", {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
@@ -60,7 +60,7 @@ function DisplayProd() {
         try {
             const token = localStorage.getItem("access_token");
 
-            await axios.delete(`/api/products/${id}`, {
+            await api.delete(`/products/${id}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
 
@@ -100,7 +100,7 @@ function DisplayProd() {
 
         try {
             if (refreshToken) {
-                await axios.post("/api/logout", {
+                await api.post("/logout", {
                     refresh_token: refreshToken,
                 });
             }

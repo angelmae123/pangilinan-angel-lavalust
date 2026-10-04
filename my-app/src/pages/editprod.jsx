@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../api";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 
@@ -26,8 +26,8 @@ function EditProd() {
                     return;
                 }
 
-                const response = await axios.get(
-                    `/api/products/${id}`,
+                const response = await api.get(
+                    `/products/${id}`,
                     {
                         headers: {
                             Authorization: `Bearer ${token}`,
@@ -79,8 +79,8 @@ function EditProd() {
                 return;
             }
 
-            await axios.put(
-                `/api/products/${id}`,
+            await api.put(
+                `/products/${id}`,
                 {
                     product_name: productName,
                     description: description,

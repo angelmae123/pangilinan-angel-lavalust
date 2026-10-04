@@ -1,5 +1,5 @@
 import { useState } from "react";
-import axios from "axios";
+import api from "../api";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
@@ -28,8 +28,8 @@ function AddProd() {
                 return;
             }
 
-            await axios.post(
-                "/api/products",
+            await api.post(
+                "/products",
                 {
                     product_name: productName,
                     description: description,
