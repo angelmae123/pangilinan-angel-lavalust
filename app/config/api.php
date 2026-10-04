@@ -159,7 +159,8 @@ $config['products_table'] = 'products';
 $config['cors'] = [
     'allowed_origins' => [
         'http://localhost:5173',
-        'http://localhost:5174'
+        'http://localhost:5174',
+        'https://pangilinan-angel-lavalust.vercel.app'
     ],
     'allowed_methods' => [
         'GET',
