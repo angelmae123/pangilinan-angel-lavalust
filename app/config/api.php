@@ -156,25 +156,7 @@ $config['products_table'] = 'products';
 | a browser, so set your real domain in production.
 |
 */
-$config['cors'] = [
-    'allowed_origins' => [
-        'http://localhost:5173',
-        'http://localhost:5174',
-        'https://pangilinan-angel-lavalust.vercel.app'
-    ],
-    'allowed_methods' => [
-        'GET',
-        'POST',
-        'PUT',
-        'PATCH',
-        'DELETE',
-        'OPTIONS'
-    ],
-    'allowed_headers' => [
-        'Content-Type',
-        'Authorization'
-    ]
-];
+$config['allow_origin'] = 'https://pangilinan-angel-lavalust.vercel.app';
 
 /*
 |--------------------------------------------------------------------------
