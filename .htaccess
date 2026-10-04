@@ -24,7 +24,7 @@ AddDefaultCharset UTF-8
     Options -Indexes
 
     # --------------------------------------------------
-    # Send all requests to LavaLust front controller
+    # Route all requests through public/index.php
     RewriteCond %{REQUEST_URI} !^/public/
-    RewriteRule ^ public/index.php [L,QSA]
+    RewriteRule ^(.*)$ public/$1 [L,QSA]
 </IfModule>
