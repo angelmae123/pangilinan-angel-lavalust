@@ -106,5 +106,9 @@ $autoload['models'] = array();
 | config files.  Otherwise, leave it blank.
 |
 */
-$autoload['configs'] = array();
-?>
+$autoload['configs'] = array(
+    'database',
+    'jwt',
+    'rate_limit',
+    'middleware'
+);

@@ -45,3 +45,52 @@ defined('PREVENT_DIRECT_ACCESS') OR exit('No direct script access allowed');
 /** @var object $router **/
 
 $router->get('/', 'Welcome::index');
+
+$router->get('create-migration/{migration_class}', 'MigrationController::create_migration');
+$router->get('migrate', 'MigrationController::migrate');
+$router->get('rollback', 'MigrationController::rollback');
+$router->get('rollback-all', 'MigrationController::rollback_all');
+$router->get('refresh', 'MigrationController::refresh');
+$router->get('status', 'MigrationController::status');
+
+
+// Authentication
+$router->post('login', 'AuthApiController::login');
+$router->post('logout', 'AuthApiController::logout');
+$router->post('refresh', 'AuthApiController::refresh');
+
+
+// Protected profile
+$router->get('profile', 'AuthApiController::profile')
+       ->middleware('jwt_auth');
+
+
+// User creation
+$router->post('users', 'AuthApiController::create');
+
+
+// Protected Product CRUD
+$router->get('products', 'ProductApiController::index')
+       ->middleware('jwt_auth');
+
+$router->get('products/{id}', 'ProductApiController::show')
+       ->middleware('jwt_auth');
+
+$router->post('products', 'ProductApiController::create')
+       ->middleware('jwt_auth');
+
+$router->put('products/{id}', 'ProductApiController::update')
+       ->middleware('jwt_auth');
+
+$router->patch('products/{id}', 'ProductApiController::update')
+       ->middleware('jwt_auth');
+
+$router->delete('products/{id}', 'ProductApiController::delete')
+       ->middleware('jwt_auth');
+
+
+// TEMPORARY DB TEST — remove after testing
+$router->get('/test-db', function() {
+    header('Content-Type: application/json');
+    echo json_encode(database_config());
+});

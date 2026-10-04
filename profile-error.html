@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Whoops! &mdash; Exception</title>
+    <style nonce="">
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg-deep:    #0d0d18;
+            --bg-panel:   #11111e;
+            --bg-surface: #16162a;
+            --bg-hover:   #1c1c2e;
+            --bg-active:  #1e1e36;
+            --border:     #1f1f32;
+            --border-mid: #2a2a42;
+            --text:       #c8c8e0;
+            --text-muted: #55556a;
+            --text-dim:   #44445a;
+            --accent:     #e8513a;
+            --accent-dim: rgba(232, 81, 58, 0.15);
+            --blue:       #3b82f6;
+            --purple:     #a78bfa;
+            --green:      #86efac;
+            --orange:     #fb923c;
+            --pink:       #f472b6;
+            --cyan:       #67e8f9;
+        }
+
+        html, body {
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            background: var(--bg-deep);
+            color: var(--text);
+            font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'JetBrains Mono', monospace;
+            font-size: 13px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ── TOP BAR ── */
+        .top-bar {
+            background: var(--accent);
+            color: #fff;
+            padding: 10px 18px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-shrink: 0;
+            min-height: 46px;
+        }
+        .top-bar .exc-type {
+            background: rgba(0,0,0,.28);
+            padding: 3px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: .6px;
+            white-space: nowrap;
+        }
+        .top-bar .exc-msg {
+            font-family: system-ui, -apple-system, sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            flex: 1;
+            line-height: 1.4;
+        }
+
+        /* ── MAIN LAYOUT ── */
+        .layout {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            min-height: 0;
+        }
+
+        /* ── LEFT SIDEBAR ── */
+        .sidebar {
+            width: 360px;
+            min-width: 260px;
+            background: var(--bg-panel);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        .sidebar-title {
+            font-size: 10px;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            padding: 10px 16px 9px;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+        .trace-list {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+        .trace-list::-webkit-scrollbar { width: 4px; }
+        .trace-list::-webkit-scrollbar-track { background: transparent; }
+        .trace-list::-webkit-scrollbar-thumb { background: var(--border-mid); border-radius: 2px; }
+
+        .trace-item {
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            border-left: 3px solid transparent;
+            transition: background .1s;
+        }
+        .trace-item:hover { background: var(--bg-hover); }
+        .trace-item.active {
+            background: var(--bg-active);
+            border-left-color: var(--accent);
+        }
+        .trace-fn {
+            color: var(--purple);
+            font-size: 12px;
+            margin-bottom: 3px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .trace-item.active .trace-fn { color: #c4b5fd; }
+        .trace-loc {
+            color: var(--text-muted);
+            font-size: 11px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .trace-loc .line-num { color: var(--blue); }
+
+        /* ── RIGHT PANEL ── */
+        .right-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-width: 0;
+            background: var(--bg-deep);
+        }
+
+        .code-header {
+            background: var(--bg-panel);
+            border-bottom: 1px solid var(--border);
+            padding: 9px 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+        .code-header .file-path {
+            color: #7dd3fc;
+            font-size: 12px;
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .code-header .line-badge {
+            background: var(--accent-dim);
+            color: var(--accent);
+            font-size: 11px;
+            padding: 2px 9px;
+            border-radius: 4px;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .code-view {
+            flex: 1;
+            overflow: auto;
+            font-size: 12.5px;
+            line-height: 1.75;
+        }
+        .code-view::-webkit-scrollbar { width: 6px; height: 6px; }
+        .code-view::-webkit-scrollbar-track { background: transparent; }
+        .code-view::-webkit-scrollbar-thumb { background: var(--border-mid); border-radius: 3px; }
+
+        .code-line {
+            display: flex;
+            align-items: stretch;
+            min-width: max-content;
+        }
+        .code-line:hover { background: rgba(255,255,255,.025); }
+        .code-line.error-line { background: rgba(232,81,58,.12); }
+
+        .ln {
+            width: 52px;
+            text-align: right;
+            padding: 0 16px 0 0;
+            color: var(--text-dim);
+            user-select: none;
+            flex-shrink: 0;
+            font-size: 12px;
+        }
+        .code-line.error-line .ln { color: var(--accent); font-weight: 700; }
+
+        .error-arrow {
+            width: 16px;
+            color: var(--accent);
+            flex-shrink: 0;
+            font-size: 12px;
+        }
+
+        .src {
+            flex: 1;
+            padding-right: 32px;
+            white-space: pre;
+            color: var(--text);
+        }
+        .code-line.error-line .src { color: #fff; }
+
+        /* syntax */
+        .kw  { color: var(--pink); }
+        .str { color: var(--green); }
+        .num { color: var(--orange); }
+        .cmt { color: var(--text-dim); font-style: italic; }
+        .fn  { color: var(--blue); }
+        .var { color: var(--cyan); }
+
+        /* ── ARGS PANEL ── */
+        .args-panel {
+            border-top: 1px solid var(--border);
+            background: var(--bg-panel);
+            flex-shrink: 0;
+            max-height: 160px;
+            overflow: auto;
+        }
+        .args-panel::-webkit-scrollbar { height: 4px; width: 4px; }
+        .args-panel::-webkit-scrollbar-thumb { background: var(--border-mid); }
+        .args-title {
+            font-size: 10px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            padding: 8px 18px 6px;
+            border-bottom: 1px solid var(--border);
+        }
+        .args-body {
+            padding: 10px 18px;
+            font-size: 11.5px;
+            color: #888;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        /* ── INFO TABS ── */
+        .info-section {
+            border-top: 1px solid var(--border);
+            background: var(--bg-panel);
+            flex-shrink: 0;
+        }
+        .tabs-bar {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+        }
+        .tab-btn {
+            padding: 8px 16px;
+            font-size: 10.5px;
+            letter-spacing: .6px;
+            text-transform: uppercase;
+            cursor: pointer;
+            color: var(--text-muted);
+            border-bottom: 2px solid transparent;
+            background: none;
+            border-top: none;
+            border-left: none;
+            border-right: none;
+            font-family: inherit;
+            transition: color .15s;
+        }
+        .tab-btn:hover { color: var(--text); }
+        .tab-btn.active { color: var(--purple); border-bottom-color: var(--purple); }
+
+        .tab-pane { display: none; }
+        .tab-pane.active { display: block; }
+
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            max-height: 130px;
+            overflow: auto;
+        }
+        .info-table-wrap {
+            max-height: 130px;
+            overflow: auto;
+            padding: 6px 0;
+        }
+        .info-table-wrap::-webkit-scrollbar { width: 4px; }
+        .info-table-wrap::-webkit-scrollbar-thumb { background: var(--border-mid); }
+        .info-table td {
+            padding: 3px 18px;
+            vertical-align: top;
+        }
+        .info-table td:first-child {
+            color: var(--text-dim);
+            width: 160px;
+            white-space: nowrap;
+        }
+        .info-table td:last-child {
+            color: #9ab4ff;
+            word-break: break-all;
+        }
+        .empty-note {
+            padding: 10px 18px;
+            color: var(--text-dim);
+            font-size: 11.5px;
+        }
+
+        @media (max-width: 700px) {
+            .sidebar { width: 220px; min-width: 160px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="top-bar">
+    <span class="exc-type">Exception</span>
+    <span class="exc-msg">Undefined property db in class Controller</span>
+</div>
+
+<div class="layout">
+
+    <!-- LEFT SIDEBAR: stack frames -->
+    <div class="sidebar">
+        <div class="sidebar-title">Stack frames</div>
+        <div class="trace-list" id="traceList">
+                        <div class="trace-item active"
+                 data-index="0"
+                 onclick="activateFrame(0)">
+                <div class="trace-fn">
+                                        {main}()
+                </div>
+                <div class="trace-loc">
+                                        scheme/kernel/Controller.php                                            <span class="line-num">:84</span>
+                                    </div>
+            </div>
+                        <div class="trace-item "
+                 data-index="1"
+                 onclick="activateFrame(1)">
+                <div class="trace-fn">
+                                            Controller-&gt;                                        __get()
+                </div>
+                <div class="trace-loc">
+                                        scheme/libraries/Api.php                                            <span class="line-num">:560</span>
+                                    </div>
+            </div>
+                        <div class="trace-item "
+                 data-index="2"
+                 onclick="activateFrame(2)">
+                <div class="trace-fn">
+                                            Api-&gt;                                        require_jwt()
+                </div>
+                <div class="trace-loc">
+                                        app/middlewares/JwtAuthMiddleware.php                                            <span class="line-num">:13</span>
+                                    </div>
+            </div>
+                        <div class="trace-item "
+                 data-index="3"
+                 onclick="activateFrame(3)">
+                <div class="trace-fn">
+                                            JwtAuthMiddleware-&gt;                                        handle()
+                </div>
+                <div class="trace-loc">
+                                        scheme/kernel/Middleware.php                                            <span class="line-num">:108</span>
+                                    </div>
+            </div>
+                        <div class="trace-item "
+                 data-index="4"
+                 onclick="activateFrame(4)">
+                <div class="trace-fn">
+                                            Middleware-&gt;                                        resolve()
+                </div>
+                <div class="trace-loc">
+                                        scheme/kernel/Middleware.php                                            <span class="line-num">:91</span>
+                                    </div>
+            </div>
+                        <div class="trace-item "
+                 data-index="5"
+                 onclick="activateFrame(5)">
+                <div class="trace-fn">
+                                            Middleware-&gt;                                        {closure}()
+                </div>
+                <div class="trace-loc">
+                                        scheme/kernel/Middleware.php                                            <span class="line-num">:97</span>
+                                    </div>
+            </div>
+                        <div class="trace-item "
+                 data-index="6"
+                 onclick="activateFrame(6)">
+                <div class="trace-fn">
+                                            Middleware-&gt;                                        run()
+                </div>
+                <div class="trace-loc">
+                                        scheme/kernel/Router.php                                            <span class="line-num">:412</span>
+                                    </div>
+            </div>
+                        <div class="trace-item "
+                 data-index="7"
+                 onclick="activateFrame(7)">
+                <div class="trace-fn">
+                                            Router-&gt;                                        execute_callback()
+                </div>
+                <div class="trace-loc">
+                                        scheme/kernel/Router.php                                            <span class="line-num">:463</span>
+                                    </div>
+            </div>
+                        <div class="trace-item "
+                 data-index="8"
+                 onclick="activateFrame(8)">
+                <div class="trace-fn">
+                                            Router-&gt;                                        initiate()
+                </div>
+                <div class="trace-loc">
+                                        scheme/kernel/LavaLust.php                                            <span class="line-num">:251</span>
+                                    </div>
+            </div>
+                        <div class="trace-item "
+                 data-index="9"
+                 onclick="activateFrame(9)">
+                <div class="trace-fn">
+                                        require_once()
+                </div>
+                <div class="trace-loc">
+                                        labact6/public/index.php                                            <span class="line-num">:86</span>
+                                    </div>
+            </div>
+                    </div>
+    </div>
+
+    <!-- RIGHT PANEL: code + info -->
+    <div class="right-panel">
+
+        <!-- CODE HEADER -->
+        <div class="code-header">
+            <span class="file-path" id="codeFilePath">
+                C:\wamp64\www\labact6\scheme\kernel\Controller.php            </span>
+            <span class="line-badge" id="codeLineBadge">
+                line 84            </span>
+        </div>
+
+        <!-- CODE VIEW -->
+        <div class="code-view" id="codeView">
+                        <div class="code-line "
+                 id="src-line-74">
+                <span class="ln">74</span>
+                <span class="error-arrow">&nbsp;</span>
+                <span class="src" data-raw="	/**"></span>
+            </div>
+                        <div class="code-line "
+                 id="src-line-75">
+                <span class="ln">75</span>
+                <span class="error-arrow">&nbsp;</span>
+                <span class="src" data-raw="	 * Get Dynamic Properties"></span>
+            </div>
+                        <div class="code-line "
+                 id="src-line-76">
+                <span class="ln">76</span>
+                <span class="error-arrow">&nbsp;</span>
+                <span class="src" data-raw="	 *"></span>
+            </div>
+                        <div class="code-line "
+                 id="src-line-77">
+                <span class="ln">77</span>
+                <span class="error-arrow">&nbsp;</span>
+                <span class="src" data-raw="	 * @param string $prop"></span>
+            </div>
+                        <div class="code-line "
+                 id="src-line-78">
+                <span class="ln">78</span>
+                <span class="error-arrow">&nbsp;</span>
+                <span class="src" data-raw="	 * @return void"></span>
+            </div>
+                        <div class="code-line "
+                 id="src-line-79">
+                <span class="ln">79</span>
+                <span class="error-arrow">&nbsp;</span>
+                <span class="src" data-raw="	 */"></span>
+            </div>
+                        <div class="code-line "
+                 id="src-line-80">
+                <span class="ln">80</span>
+                <span class="error-arrow">&nbsp;</span>
+                <span class="src" data-raw="	public function __get($prop) {"></span>
+            </div>
+                        <div class="code-line "
+                 id="src-line-81">
+                <span class="ln">81</span>
+                <span class="error-arrow">&nbsp;</span>
+                <span class="src" data-raw="		if (array_key_exists($prop, $this-&gt;properties)) {"></span>
+            </div>
+                        <div class="code-line "
+                 id="src-line-82">
+                <span class="ln">82</span>
+                <span class="error-arrow">&nbsp;</span>
+                <span class="src" data-raw="			return $this-&gt;properties[$prop];"></span>
+            </div>
+                        <div class="code-line "
+                 id="src-line-83">
+                <span class="ln">83</span>
+                <span class="error-arrow">&nbsp;</span>
+                <span class="src" data-raw="		} else {"></span>
+            </div>
+                        <div class="code-line error-line"
+                 id="src-line-84">
+                <span class="ln">84</span>
+                <span class="error-arrow">&#9654;</span>
+                <span class="src" data-raw="			throw new Exception(&quot;Undefined property $prop in class &quot; . get_class($this));"></span>
+            </div>
+                        <div class="code-line "
+                 id="src-line-85">
+                <span class="ln">85</span>
+                <span class="error-arrow">&nbsp;</span>
+                <span class="src" data-raw="		}"></span>
+            </div>
+                        <div class="code-line "
+                 id="src-line-86">
+                <span class="ln">86</span>
+                <span class="error-arrow">&nbsp;</span>
+                <span class="src" data-raw="	}"></span>
+            </div>
+                        <div class="code-line "
+                 id="src-line-87">
+                <span class="ln">87</span>
+                <span class="error-arrow">&nbsp;</span>
+                <span class="src" data-raw=""></span>
+            </div>
+                        <div class="code-line "
+                 id="src-line-88">
+                <span class="ln">88</span>
+                <span class="error-arrow">&nbsp;</span>
+                <span class="src" data-raw="	/**"></span>
+            </div>
+                        <div class="code-line "
+                 id="src-line-89">
+                <span class="ln">89</span>
+                <span class="error-arrow">&nbsp;</span>
+                <span class="src" data-raw="	 * Constructor"></span>
+            </div>
+                        <div class="code-line "
+                 id="src-line-90">
+                <span class="ln">90</span>
+                <span class="error-arrow">&nbsp;</span>
+                <span class="src" data-raw="	 */"></span>
+            </div>
+                        <div class="code-line "
+                 id="src-line-91">
+                <span class="ln">91</span>
+                <span class="error-arrow">&nbsp;</span>
+                <span class="src" data-raw="	public function __construct()"></span>
+            </div>
+                        <div class="code-line "
+                 id="src-line-92">
+                <span class="ln">92</span>
+                <span class="error-arrow">&nbsp;</span>
+                <span class="src" data-raw="	{"></span>
+            </div>
+                        <div class="code-line "
+                 id="src-line-93">
+                <span class="ln">93</span>
+                <span class="error-arrow">&nbsp;</span>
+                <span class="src" data-raw="		self::$instance = $this;"></span>
+            </div>
+                        <div class="code-line "
+                 id="src-line-94">
+                <span class="ln">94</span>
+                <span class="error-arrow">&nbsp;</span>
+                <span class="src" data-raw=""></span>
+            </div>
+                    </div>
+
+        <!-- ARGS PANEL (shown when frame has args) -->
+        <div class="args-panel" id="argsPanel" style="display:none">
+            <div class="args-title">Arguments</div>
+            <div class="args-body" id="argsBody"></div>
+        </div>
+
+        <!-- INFO TABS -->
+        <div class="info-section">
+            <div class="tabs-bar">
+                <button class="tab-btn active" onclick="switchTab(this,'env')">Environment</button>
+                <button class="tab-btn" onclick="switchTab(this,'get')">GET</button>
+                <button class="tab-btn" onclick="switchTab(this,'post')">POST</button>
+                <button class="tab-btn" onclick="switchTab(this,'server')">Server</button>
+            </div>
+
+            <div class="tab-pane active" id="pane-env">
+                <div class="info-table-wrap">
+                    <table class="info-table">
+                        <tr><td>PHP Version</td><td>8.3.14</td></tr>
+                        <tr><td>LavaLust</td><td>4.6.0</td></tr>
+                        <tr><td>Environment</td><td>development</td></tr>
+                        <tr><td>Memory Used</td><td>2 MB</td></tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="tab-pane" id="pane-get">
+                                    <div class="empty-note">No GET data.</div>
+                            </div>
+
+            <div class="tab-pane" id="pane-post">
+                                    <div class="empty-note">No POST data.</div>
+                            </div>
+
+            <div class="tab-pane" id="pane-server">
+                <div class="info-table-wrap">
+                    <table class="info-table">
+                                                <tr>
+                            <td>REQUEST_METHOD</td>
+                            <td>GET</td>
+                        </tr>
+                                                <tr>
+                            <td>REQUEST_URI</td>
+                            <td>/profile</td>
+                        </tr>
+                                                <tr>
+                            <td>HTTP_HOST</td>
+                            <td>127.0.0.1:3000</td>
+                        </tr>
+                                                <tr>
+                            <td>REMOTE_ADDR</td>
+                            <td>127.0.0.1</td>
+                        </tr>
+                                                <tr>
+                            <td>SERVER_SOFTWARE</td>
+                            <td>PHP/8.3.14 (Development Server)</td>
+                        </tr>
+                                                <tr>
+                            <td>SERVER_PORT</td>
+                            <td>3000</td>
+                        </tr>
+                                                <tr>
+                            <td>HTTP_USER_AGENT</td>
+                            <td>Mozilla/5.0 (Windows NT; Windows NT 10.0; en-PH) WindowsPowerShell/5.1.26100.9549</td>
+                        </tr>
+                                            </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Frame data for JS -->
+<script nonce="">
+const FRAMES = [{"file":"C:\\wamp64\\www\\labact6\\scheme\\kernel\\Controller.php","line":84,"code":[{"n":74,"s":"\t/**"},{"n":75,"s":"\t * Get Dynamic Properties"},{"n":76,"s":"\t *"},{"n":77,"s":"\t * @param string $prop"},{"n":78,"s":"\t * @return void"},{"n":79,"s":"\t */"},{"n":80,"s":"\tpublic function __get($prop) {"},{"n":81,"s":"\t\tif (array_key_exists($prop, $this->properties)) {"},{"n":82,"s":"\t\t\treturn $this->properties[$prop];"},{"n":83,"s":"\t\t} else {"},{"n":84,"s":"\t\t\tthrow new Exception(\"Undefined property $prop in class \" . get_class($this));"},{"n":85,"s":"\t\t}"},{"n":86,"s":"\t}"},{"n":87,"s":""},{"n":88,"s":"\t/**"},{"n":89,"s":"\t * Constructor"},{"n":90,"s":"\t */"},{"n":91,"s":"\tpublic function __construct()"},{"n":92,"s":"\t{"},{"n":93,"s":"\t\tself::$instance = $this;"},{"n":94,"s":""}],"args":""},{"file":"C:\\wamp64\\www\\labact6\\scheme\\libraries\\Api.php","line":560,"code":[{"n":550,"s":"    public function require_jwt()"},{"n":551,"s":"    {"},{"n":552,"s":"        $token = $this->get_bearer_token();"},{"n":553,"s":"        $payload = $this->validate_jwt($token ?? '');"},{"n":554,"s":""},{"n":555,"s":"        if (!$payload) {"},{"n":556,"s":"            $this->respond_error('Unauthorized', 401);"},{"n":557,"s":"        }"},{"n":558,"s":""},{"n":559,"s":"        if ($this->verify_user) {"},{"n":560,"s":"            $stmt = $this->_lava->db->raw("},{"n":561,"s":"                \"SELECT id, role FROM {$this->users_table} WHERE id = ? LIMIT 1\","},{"n":562,"s":"                [$payload['sub']]"},{"n":563,"s":"            );"},{"n":564,"s":"            $user = $stmt->fetch(PDO::FETCH_ASSOC);"},{"n":565,"s":""},{"n":566,"s":"            if (!$user) {"},{"n":567,"s":"                $this->respond_error('Unauthorized', 401);"},{"n":568,"s":"            }"},{"n":569,"s":""},{"n":570,"s":"            // Server-side values win over whatever the token claims."}],"args":"Array\n(\n    [0] => db\n)\n"},{"file":"C:\\wamp64\\www\\labact6\\app\\middlewares\\JwtAuthMiddleware.php","line":13,"code":[{"n":3,"s":"defined('PREVENT_DIRECT_ACCESS') OR exit('No direct script access allowed');"},{"n":4,"s":""},{"n":5,"s":"class JwtAuthMiddleware"},{"n":6,"s":"{"},{"n":7,"s":"    public function handle(Closure $next)"},{"n":8,"s":"    {"},{"n":9,"s":"        $lava = lava_instance();"},{"n":10,"s":""},{"n":11,"s":"        $lava->call->library('api');"},{"n":12,"s":""},{"n":13,"s":"        $lava->api->require_jwt();"},{"n":14,"s":""},{"n":15,"s":"        return $next();"},{"n":16,"s":"    }"},{"n":17,"s":"}"}],"args":""},{"file":"C:\\wamp64\\www\\labact6\\scheme\\kernel\\Middleware.php","line":108,"code":[{"n":98,"s":"    }"},{"n":99,"s":""},{"n":100,"s":"    protected function resolve($middleware, $next)"},{"n":101,"s":"    {"},{"n":102,"s":"        if (!isset($this->map[$middleware])) {"},{"n":103,"s":"            throw new Exception("},{"n":104,"s":"                \"Middleware [$middleware] not registered.\""},{"n":105,"s":"            );"},{"n":106,"s":"        }"},{"n":107,"s":""},{"n":108,"s":"        return $this->map[$middleware]->handle($next);"},{"n":109,"s":"    }"},{"n":110,"s":"}"},{"n":111,"s":""}],"args":"Array\n(\n    [0] => Closure Object\n        (\n            [static] => Array\n                (\n                    [callback] => AuthApiController::profile\n                    [matches] => Array\n                        (\n                        )\n\n                )\n\n            [this] => Router Object\n                (\n                    [routes:Router:private] => Array\n                        (\n                            [0] => Array\n                                (\n                                    [url] => \n                                    [callback] => Welcome::index\n                                    [method] => GET\n                                    [name] => \n                                    [constraints] => Array\n                                        (\n                                        )\n\n                                    [middleware] => Array\n                                        (\n                                        )\n\n                                )\n\n                            [1] => Array\n                                (\n                                    [url] => /create-migration/{migration_class}\n                                    [callback] => MigrationController::create_migration\n                                    [method] => GET\n                                    [name] => \n                                    [constraints] => Array\n                                        (\n                                        )\n\n                                    [middleware] => Array\n                                        (\n                                        )\n\n                                )\n\n                            [2] => Array\n                                (\n                                    [url] => /migrate\n                                    [callback] => MigrationController::migrate\n                                    [method] => GET\n                                    [name] => \n                                    [constraints] => Array\n                                        (\n                                        )\n\n                                    [middleware] => Array\n                                        (\n                                        )\n\n                                )\n\n                            [3] => Array\n                                (\n                                    [url] => /rollback\n                                    [callback] => MigrationController::rollback\n                                    [method] => GET\n                                    [name] => \n                                    [constraints] => Array\n                                        (\n                                        )\n\n                                    [middleware] => Array\n                                        (\n                                        )\n\n                                )\n\n                            [4] => Array\n                                (\n                                    [url] => /rollback-all\n                                    [callback] => MigrationController::rollback_all\n                                    [method] => GET\n                                    [name] => \n                                    [constraints] => Array\n                                        (\n                                        )\n\n                                    [middleware] => Array\n                                        (\n                                        )\n\n                                )\n\n                            [5] => Array\n                                (\n                                    [url] => /refresh\n                                    [callback] => MigrationController::refresh\n                                    [method] => GET\n                                    [name] => \n                                    [constraints] => Array\n                                        (\n                                        )\n\n                                    [middleware] => Array\n                                        (\n                                        )\n\n                                )\n\n                            [6] => Array\n                                (\n                                    [url] => /status\n                                    [callback] => MigrationController::status\n                                    [method] => GET\n                                    [name] => \n                                    [constraints] => Array\n                                        (\n                                        )\n\n                                    [middleware] => Array\n                                        (\n                                        )\n\n                                )\n\n                            [7] => Array\n                                (\n                                    [url] => /login\n                                    [callback] => AuthApiController::login\n                                    [method] => POST\n                                    [name] => \n                                    [constraints] => Array\n                                        (\n                                        )\n\n                                    [middleware] => Array\n                                        (\n                                        )\n\n                                )\n\n                            [8] => Array\n                                (\n                                    [url] => /logout\n                                    [callback] => AuthApiController::logout\n                                    [method] => POST\n                                    [name] => \n                                    [constraints] => Array\n                                        (\n                                        )\n\n                                    [middleware] => Array\n                                        (\n                                        )\n\n                                )\n\n                            [9] => Array\n                                (\n                                    [url] => /refresh\n                                    [callback] => AuthApiController::refresh\n                                    [method] => POST\n                                    [name] => \n                                    [constraints] => Array\n                                        (\n                                        )\n\n                                    [middleware] => Array\n                                        (\n                                        )\n\n                                )\n\n                            [10] => Array\n                                (\n                                    [url] => /profile\n                                    [callback] => AuthApiController::profile\n                                    [method] => GET\n                                    [name] => \n                                    [constraints] => Array\n                                        (\n                                        )\n\n                                    [middleware] => Array\n                                        (\n                                            [0] => jwt_auth\n                                        )\n\n                                )\n\n                            [11] => Array\n                                (\n                                    [url] => /users\n                                    [callback] => AuthApiController::create\n                                    [method] => POST\n                                    [name] => \n                                    [constraints] => Array\n                                        (\n                                        )\n\n                                    [middleware] => Array\n                                        (\n                                        )\n\n                                )\n\n                            [12] => Array\n                                (\n                                    [url] => /test-db\n                                    [callback] => Closure Object\n                                        (\n                                        )\n\n                                    [method] => GET\n                                    [name] => \n                                    [constraints] => Array\n                                        (\n                                        )\n\n                                    [middleware] => Array\n                                        (\n                                        )\n\n                                )\n\n                        )\n\n                    [group_middleware:Router:private] => Array\n                        (\n                        )\n\n                    [global_middleware:Router:private] => Array\n                        (\n                        )\n\n                    [group_prefix:Router:private] => \n                )\n\n        )\n\n)\n"},{"file":"C:\\wamp64\\www\\labact6\\scheme\\kernel\\Middleware.php","line":91,"code":[{"n":81,"s":"            $this->map[$name] = new $middleware();"},{"n":82,"s":"        }"},{"n":83,"s":"    }"},{"n":84,"s":""},{"n":85,"s":"    public function run(array $middlewares, Closure $destination)"},{"n":86,"s":"    {"},{"n":87,"s":"        $pipeline = array_reduce("},{"n":88,"s":"            array_reverse($middlewares),"},{"n":89,"s":"            function ($next, $middleware) {"},{"n":90,"s":"                return function () use ($middleware, $next) {"},{"n":91,"s":"                    return $this->resolve($middleware, $next);"},{"n":92,"s":"                };"},{"n":93,"s":"            },"},{"n":94,"s":"            $destination"},{"n":95,"s":"        );"},{"n":96,"s":""},{"n":97,"s":"        return $pipeline();"},{"n":98,"s":"    }"},{"n":99,"s":""},{"n":100,"s":"    protected function resolve($middleware, $next)"},{"n":101,"s":"    {"}],"args":"Array\n(\n    [0] => jwt_auth\n    [1] => Closure Object\n        (\n            [static] => Array\n                (\n                    [callback] => AuthApiController::profile\n                    [matches] => Array\n                        (\n                        )\n\n                )\n\n            [this] => Router Object\n                (\n                    [routes:Router:private] => Array\n                        (\n                            [0] => Array\n                                (\n                                    [url] => \n                                    [callback] => Welcome::index\n                                    [method] => GET\n                                    [name] => \n                                    [constraints] => Array\n                                        (\n                                        )\n\n                                    [middleware] => Array\n                                        (\n                                        )\n\n                                )\n\n                            [1] => Array\n                                (\n                                    [url] => /create-migration/{migration_class}\n                                    [callback] => MigrationController::create_migration\n                                    [method] => GET\n                                    [name] => \n                                    [constraints] => Array\n                                        (\n                                        )\n\n                                    [middleware] => Array\n                                        (\n                                        )\n\n                                )\n\n                            [2] => Array\n                                (\n                                    [url] => /migrate\n                                    [callback] => MigrationController::migrate\n                                    [method] => GET\n                                    [name] => \n                                    [constraints] => Array\n                                        (\n                                        )\n\n                                    [middleware] => Array\n                                        (\n                                        )\n\n                                )\n\n                            [3] => Array\n                                (\n                                    [url] => /rollback\n                                    [callback] => MigrationController::rollback\n                                    [method] => GET\n                                    [name] => \n                                    [constraints] => Array\n                                        (\n                                        )\n\n                                    [middleware] => Array\n                                        (\n                                        )\n\n                                )\n\n                            [4] => Array\n                                (\n                                    [url] => /rollback-all\n                                    [callback] => MigrationController::rollback_all\n                                    [method] => GET\n                                    [name] => \n                                    [constraints] => Array\n                                        (\n                                        )\n\n                                    [middleware] => Array\n                                        (\n                                        )\n\n                                )\n\n                            [5] => Array\n                                (\n                                    [url] => /refresh\n                                    [callback] => MigrationController::refresh\n                                    [method] => GET\n                                    [name] => \n                                    [constraints] => Array\n                                        (\n                                        )\n\n                                    [middleware] => Array\n                                        (\n                                        )\n\n                                )\n\n                            [6] => Array\n                                (\n                                    [url] => /status\n                                    [callback] => MigrationController::status\n                                    [method] => GET\n                                    [name] => \n                                    [constraints] => Array\n                                        (\n                                        )\n\n                                    [middleware] => Array\n                                        (\n                                        )\n\n                                )\n\n                            [7] => Array\n                                (\n                                    [url] => /login\n                                    [callback] => AuthApiController::login\n                                    [method] => POST\n                                    [name] => \n                                    [constraints] => Array\n                                        (\n                                        )\n\n                                    [middleware] => Array\n                                        (\n                                        )\n\n                                )\n\n                            [8] => Array\n                                (\n                                    [url] => /logout\n                                    [callback] => AuthApiController::logout\n                                    [method] => POST\n                                    [name] => \n                                    [constraints] => Array\n                                        (\n                                        )\n\n                                    [middleware] => Array\n                                        (\n                                        )\n\n                                )\n\n                            [9] => Array\n                                (\n                                    [url] => /refresh\n                                    [callback] => AuthApiController::refresh\n                                    [method] => POST\n                                    [name] => \n                                    [constraints] => Array\n                                        (\n                                        )\n\n                                    [middleware] => Array\n                                        (\n                                        )\n\n                                )\n\n                            [10] => Array\n                                (\n                                    [url] => /profile\n                                    [callback] => AuthApiController::profile\n                                    [method] => GET\n                                    [name] => \n                                    [constraints] => Array\n                                        (\n                                        )\n\n                                    [middleware] => Array\n                                        (\n                                            [0] => jwt_auth\n                                        )\n\n                                )\n\n                            [11] => Array\n                                (\n                                    [url] => /users\n                                    [callback] => AuthApiController::create\n                                    [method] => POST\n                                    [name] => \n                                    [constraints] => Array\n                                        (\n                                        )\n\n                                    [middleware] => Array\n                                        (\n                                        )\n\n                                )\n\n                            [12] => Array\n                                (\n                                    [url] => /test-db\n                                    [callback] => Closure Object\n                                        (\n                                        )\n\n                                    [method] => GET\n                                    [name] => \n                                    [constraints] => Array\n                                        (\n                                        )\n\n                                    [middleware] => Array\n                                        (\n                                        )\n\n                                )\n\n                        )\n\n                    [group_middleware:Router:private] => Array\n                        (\n                        )\n\n                    [global_middleware:Router:private] => Array\n                        (\n                        )\n\n                    [group_prefix:Router:private] => \n                )\n\n        )\n\n)\n"},{"file":"C:\\wamp64\\www\\labact6\\scheme\\kernel\\Middleware.php","line":97,"code":[{"n":87,"s":"        $pipeline = array_reduce("},{"n":88,"s":"            array_reverse($middlewares),"},{"n":89,"s":"            function ($next, $middleware) {"},{"n":90,"s":"                return function () use ($middleware, $next) {"},{"n":91,"s":"                    return $this->resolve($middleware, $next);"},{"n":92,"s":"                };"},{"n":93,"s":"            },"},{"n":94,"s":"            $destination"},{"n":95,"s":"        );"},{"n":96,"s":""},{"n":97,"s":"        return $pipeline();"},{"n":98,"s":"    }"},{"n":99,"s":""},{"n":100,"s":"    protected function resolve($middleware, $next)"},{"n":101,"s":"    {"},{"n":102,"s":"        if (!isset($this->map[$middleware])) {"},{"n":103,"s":"            throw new Exception("},{"n":104,"s":"                \"Middleware [$middleware] not registered.\""},{"n":105,"s":"            );"},{"n":106,"s":"        }"},{"n":107,"s":""}],"args":""},{"file":"C:\\wamp64\\www\\labact6\\scheme\\kernel\\Router.php","line":412,"code":[{"n":402,"s":"    {"},{"n":403,"s":"        $matches = [];"},{"n":404,"s":"        if (preg_match($this->convert_to_regex_pattern($route['url'], $route['constraints']), $url, $matches)) {"},{"n":405,"s":"            array_shift($matches);"},{"n":406,"s":""},{"n":407,"s":"            $callback    = $route['callback'];"},{"n":408,"s":"            $middlewares = $route['middleware'] ?? [];"},{"n":409,"s":""},{"n":410,"s":"            if (!empty($middlewares)) {"},{"n":411,"s":"                $runner = load_class('Middleware', 'kernel'); // make sure kernel middleware class exists"},{"n":412,"s":"                $runner->run($middlewares, function () use ($callback, $matches) {"},{"n":413,"s":"                    $this->call_controller_from_callback($callback, $matches);"},{"n":414,"s":"                });"},{"n":415,"s":"                return;"},{"n":416,"s":"            }"},{"n":417,"s":""},{"n":418,"s":"            $this->call_controller_from_callback($callback, $matches);"},{"n":419,"s":"        }"},{"n":420,"s":"    }"},{"n":421,"s":""},{"n":422,"s":""}],"args":"Array\n(\n    [0] => Array\n        (\n            [0] => jwt_auth\n        )\n\n    [1] => Closure Object\n        (\n            [static] => Array\n                (\n                    [callback] => AuthApiController::profile\n                    [matches] => Array\n                        (\n                        )\n\n                )\n\n            [this] => Router Object\n                (\n                    [routes:Router:private] => Array\n                        (\n                            [0] => Array\n                                (\n                                    [url] => \n                                    [callback] => Welcome::index\n                                    [method] => GET\n                                    [name] => \n                                    [constraints] => Array\n                                        (\n                                        )\n\n                                    [middleware] => Array\n                                        (\n                                        )\n\n                                )\n\n                            [1] => Array\n                                (\n                                    [url] => /create-migration/{migration_class}\n                                    [callback] => MigrationController::create_migration\n                                    [method] => GET\n                                    [name] => \n                                    [constraints] => Array\n                                        (\n                                        )\n\n                                    [middleware] => Array\n                                        (\n                                        )\n\n                                )\n\n                            [2] => Array\n                                (\n                                    [url] => /migrate\n                                    [callback] => MigrationController::migrate\n                                    [method] => GET\n                                    [name] => \n                                    [constraints] => Array\n                                        (\n                                        )\n\n                                    [middleware] => Array\n                                        (\n                                        )\n\n                                )\n\n                            [3] => Array\n                                (\n                                    [url] => /rollback\n                                    [callback] => MigrationController::rollback\n                                    [method] => GET\n                                    [name] => \n                                    [constraints] => Array\n                                        (\n                                        )\n\n                                    [middleware] => Array\n                                        (\n                                        )\n\n                                )\n\n                            [4] => Array\n                                (\n                                    [url] => /rollback-all\n                                    [callback] => MigrationController::rollback_all\n                                    [method] => GET\n                                    [name] => \n                                    [constraints] => Array\n                                        (\n                                        )\n\n                                    [middleware] => Array\n                                        (\n                                        )\n\n                                )\n\n                            [5] => Array\n                                (\n                                    [url] => /refresh\n                                    [callback] => MigrationController::refresh\n                                    [method] => GET\n                                    [name] => \n                                    [constraints] => Array\n                                        (\n                                        )\n\n                                    [middleware] => Array\n                                        (\n                                        )\n\n                                )\n\n                            [6] => Array\n                                (\n                                    [url] => /status\n                                    [callback] => MigrationController::status\n                                    [method] => GET\n                                    [name] => \n                                    [constraints] => Array\n                                        (\n                                        )\n\n                                    [middleware] => Array\n                                        (\n                                        )\n\n                                )\n\n                            [7] => Array\n                                (\n                                    [url] => /login\n                                    [callback] => AuthApiController::login\n                                    [method] => POST\n                                    [name] => \n                                    [constraints] => Array\n                                        (\n                                        )\n\n                                    [middleware] => Array\n                                        (\n                                        )\n\n                                )\n\n                            [8] => Array\n                                (\n                                    [url] => /logout\n                                    [callback] => AuthApiController::logout\n                                    [method] => POST\n                                    [name] => \n                                    [constraints] => Array\n                                        (\n                                        )\n\n                                    [middleware] => Array\n                                        (\n                                        )\n\n                                )\n\n                            [9] => Array\n                                (\n                                    [url] => /refresh\n                                    [callback] => AuthApiController::refresh\n                                    [method] => POST\n                                    [name] => \n                                    [constraints] => Array\n                                        (\n                                        )\n\n                                    [middleware] => Array\n                                        (\n                                        )\n\n                                )\n\n                            [10] => Array\n                                (\n                                    [url] => /profile\n                                    [callback] => AuthApiController::profile\n                                    [method] => GET\n                                    [name] => \n                                    [constraints] => Array\n                                        (\n                                        )\n\n                                    [middleware] => Array\n                                        (\n                                            [0] => jwt_auth\n                                        )\n\n                                )\n\n                            [11] => Array\n                                (\n                                    [url] => /users\n                                    [callback] => AuthApiController::create\n                                    [method] => POST\n                                    [name] => \n                                    [constraints] => Array\n                                        (\n                                        )\n\n                                    [middleware] => Array\n                                        (\n                                        )\n\n                                )\n\n                            [12] => Array\n                                (\n                                    [url] => /test-db\n                                    [callback] => Closure Object\n                                        (\n                                        )\n\n                                    [method] => GET\n                                    [name] => \n                                    [constraints] => Array\n                                        (\n                                        )\n\n                                    [middleware] => Array\n                                        (\n                                        )\n\n                                )\n\n                        )\n\n                    [group_middleware:Router:private] => Array\n                        (\n                        )\n\n                    [global_middleware:Router:private] => Array\n                        (\n                        )\n\n                    [group_prefix:Router:private] => \n                )\n\n        )\n\n)\n"},{"file":"C:\\wamp64\\www\\labact6\\scheme\\kernel\\Router.php","line":463,"code":[{"n":453,"s":"                if (defined('IS_CLI') && IS_CLI) {"},{"n":454,"s":"                    echo \"Error 400: Disallowed characters in command.\\n\";"},{"n":455,"s":"                    exit(1);"},{"n":456,"s":"                } else {"},{"n":457,"s":"                    show_error('400 Bad Request', 'The URI you submitted has disallowed characters.', 'error_general', 400);"},{"n":458,"s":"                }"},{"n":459,"s":"            }"},{"n":460,"s":"        }"},{"n":461,"s":"        foreach ($this->routes as $route) {"},{"n":462,"s":"            if (strtoupper($route['method']) === strtoupper($method) && $this->url_matches_route($url, $route)) {"},{"n":463,"s":"                $this->execute_callback($url, $route);"},{"n":464,"s":"                return;"},{"n":465,"s":"            }"},{"n":466,"s":"        }"},{"n":467,"s":"        empty(config_item('404_override')) ? show_404() : show_404('', '', config_item('404_override'));"},{"n":468,"s":"    }"},{"n":469,"s":""},{"n":470,"s":"    /**"},{"n":471,"s":"     * Add constraints to route parameters"},{"n":472,"s":"     *"},{"n":473,"s":"     * @param mixed $param"}],"args":"Array\n(\n    [0] => /profile\n    [1] => Array\n        (\n            [url] => /profile\n            [callback] => AuthApiController::profile\n            [method] => GET\n            [name] => \n            [constraints] => Array\n                (\n                )\n\n            [middleware] => Array\n                (\n                    [0] => jwt_auth\n                )\n\n        )\n\n)\n"},{"file":"C:\\wamp64\\www\\labact6\\scheme\\kernel\\LavaLust.php","line":251,"code":[{"n":241,"s":""},{"n":242,"s":"} else {"},{"n":243,"s":"    $base  = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/');"},{"n":244,"s":"\t$path  = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);"},{"n":245,"s":"\t$url   = $router->sanitize_url(substr($path, strlen($base)) ?: '/');"},{"n":246,"s":"    $method = isset($_SERVER['REQUEST_METHOD']) ? strtoupper($_SERVER['REQUEST_METHOD']) : 'GET';"},{"n":247,"s":"}"},{"n":248,"s":""},{"n":249,"s":"if (empty($url)) $url = '/';"},{"n":250,"s":""},{"n":251,"s":"$router->initiate($url, $method);"},{"n":252,"s":"?>"}],"args":"Array\n(\n    [0] => /profile\n    [1] => GET\n)\n"},{"file":"C:\\wamp64\\www\\labact6\\public\\index.php","line":86,"code":[{"n":76,"s":"define('ROOT_DIR',  dirname(__DIR__) . DIRECTORY_SEPARATOR);"},{"n":77,"s":"define('SYSTEM_DIR', ROOT_DIR . $system_path . DIRECTORY_SEPARATOR);"},{"n":78,"s":"define('APP_DIR', ROOT_DIR . $application_folder . DIRECTORY_SEPARATOR);"},{"n":79,"s":"define('PUBLIC_DIR', $public_folder);"},{"n":80,"s":""},{"n":81,"s":"/*"},{"n":82,"s":" * ------------------------------------------------------"},{"n":83,"s":" * Setup done? Then Hurray!"},{"n":84,"s":" * ------------------------------------------------------"},{"n":85,"s":" */"},{"n":86,"s":"require_once SYSTEM_DIR . 'kernel/LavaLust.php';"},{"n":87,"s":"?>"}],"args":"Array\n(\n    [0] => C:\\wamp64\\www\\labact6\\scheme\\kernel\\LavaLust.php\n)\n"}];
+
+function hl(src) {
+    // 1. HTML-escape raw source
+    src = src.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+    // 2. Extract strings + comments into frozen[], replace with safe placeholder
+    //    Placeholder: @@FROZEN_N@@ — cannot appear in PHP source code
+    const frozen = [];
+    let out = '', i = 0;
+    while (i < src.length) {
+        // // line comment
+        if (src[i]==='/' && src[i+1]==='/') {
+            let e = src.indexOf('\n', i); if (e===-1) e = src.length;
+            frozen.push('<span class="cmt">' + src.slice(i,e) + '</span>');
+            out += '@@FROZEN_'+(frozen.length-1)+'@@';
+            i = e; continue;
+        }
+        // # line comment
+        if (src[i]==='#') {
+            let e = src.indexOf('\n', i); if (e===-1) e = src.length;
+            frozen.push('<span class="cmt">' + src.slice(i,e) + '</span>');
+            out += '@@FROZEN_'+(frozen.length-1)+'@@';
+            i = e; continue;
+        }
+        // single-quoted string
+        if (src[i]==="'") {
+            let j = i+1;
+            while (j < src.length) {
+                if (src[j]==='\\') { j+=2; continue; }
+                if (src[j]==="'") { j++; break; }
+                j++;
+            }
+            frozen.push('<span class="str">' + src.slice(i,j) + '</span>');
+            out += '@@FROZEN_'+(frozen.length-1)+'@@';
+            i = j; continue;
+        }
+        // double-quoted string
+        if (src[i]==='"') {
+            let j = i+1;
+            while (j < src.length) {
+                if (src[j]==='\\') { j+=2; continue; }
+                if (src[j]==='"') { j++; break; }
+                j++;
+            }
+            frozen.push('<span class="str">' + src.slice(i,j) + '</span>');
+            out += '@@FROZEN_'+(frozen.length-1)+'@@';
+            i = j; continue;
+        }
+        out += src[i++];
+    }
+    src = out;
+
+    // 3. Highlight plain text — no HTML tags exist yet, placeholders are opaque
+    src = src.replace(/\b(function|class|public|protected|private|static|return|new|if|else|elseif|foreach|for|while|switch|case|default|break|continue|throw|try|catch|finally|require|require_once|include|include_once|namespace|use|extends|implements|abstract|interface|trait|echo|print|list|array|null|true|false|void|OR|AND)\b/g,
+        '<span class="kw">$1</span>');
+
+    src = src.replace(/(\$[a-zA-Z_][a-zA-Z0-9_]*)/g,
+        '<span class="var">$1</span>');
+
+    src = src.replace(/\b([a-zA-Z_][a-zA-Z0-9_]*)\s*\(/g, function(m, name) {
+        if (/^(if|else|elseif|for|foreach|while|switch|catch|list|array|function)$/.test(name)) return m;
+        return '<span class="fn">' + name + '</span>(';
+    });
+
+    src = src.replace(/\b(\d+\.?\d*)\b/g, '<span class="num">$1</span>');
+
+    // 4. Restore frozen tokens
+    src = src.replace(/@@FROZEN_(\d+)@@/g, (_, n) => frozen[+n]);
+
+    return src;
+}
+
+function renderCode(frameIdx) {
+    const f = FRAMES[frameIdx];
+    document.getElementById('codeFilePath').textContent = f.file || '[internal]';
+    document.getElementById('codeLineBadge').textContent = f.line ? 'line ' + f.line : '';
+
+    const view = document.getElementById('codeView');
+    view.innerHTML = f.code.map(row => {
+        const isErr = row.n === f.line;
+        return '<div class="code-line' + (isErr ? ' error-line' : '') + '">' +
+            '<span class="ln">' + row.n + '</span>' +
+            '<span class="error-arrow">' + (isErr ? '&#9654;' : '&nbsp;') + '</span>' +
+            '<span class="src">' + hl(row.s) + '</span>' +
+            '</div>';
+    }).join('');
+
+    const errLine = view.querySelector('.error-line');
+    if (errLine) errLine.scrollIntoView({ block: 'center' });
+
+    const argsPanel = document.getElementById('argsPanel');
+    const argsBody  = document.getElementById('argsBody');
+    if (f.args) {
+        argsBody.textContent = f.args;
+        argsPanel.style.display = 'block';
+    } else {
+        argsPanel.style.display = 'none';
+    }
+}
+
+function activateFrame(idx) {
+    document.querySelectorAll('.trace-item').forEach((el, i) => {
+        el.classList.toggle('active', i === idx);
+    });
+    renderCode(idx);
+}
+
+function switchTab(btn, id) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('pane-' + id).classList.add('active');
+}
+
+// Initial render: highlight inline PHP-rendered code
+document.querySelectorAll('.src[data-raw]').forEach(el => {
+    el.innerHTML = hl(el.getAttribute('data-raw'));
+    el.removeAttribute('data-raw');
+});
+
+// Scroll error line into view on load
+const initErr = document.querySelector('.code-line.error-line');
+if (initErr) initErr.scrollIntoView({ block: 'center' });
+</script>
+</body>
+</html>

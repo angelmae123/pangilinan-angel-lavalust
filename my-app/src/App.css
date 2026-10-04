@@ -1,0 +1,551 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, Helvetica, sans-serif;
+    background: #f5f5f5;
+    color: #222;
+}
+
+button,
+input,
+textarea {
+    font-family: inherit;
+}
+
+button {
+    cursor: pointer;
+}
+
+.login-page {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #f5f5f5;
+    padding: 30px;
+}
+
+.login-card {
+    width: 100%;
+    max-width: 430px;
+    background: #fff;
+    padding: 40px;
+    border-radius: 10px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.10);
+}
+
+.login-logo {
+    width: 55px;
+    height: 55px;
+    margin: 0 auto 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #333;
+    color: white;
+    border-radius: 8px;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.login-title {
+    margin: 0;
+    text-align: center;
+    font-size: 30px;
+    color: #222;
+}
+
+.login-subtitle {
+    margin: 10px 0 30px;
+    text-align: center;
+    color: #666;
+    font-size: 15px;
+}
+
+.login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.form-group label {
+    font-size: 15px;
+    font-weight: bold;
+    color: #333;
+}
+
+.form-group input,
+.form-group textarea {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 15px;
+    outline: none;
+    background: #fff;
+    color: #222;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    border-color: #333;
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 110px;
+}
+
+.login-button {
+    width: 100%;
+    padding: 13px;
+    border: none;
+    border-radius: 5px;
+    background: #333;
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.login-button:hover {
+    background: #222;
+}
+
+.login-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.login-error {
+    margin-bottom: 20px;
+    padding: 12px 15px;
+    border-radius: 5px;
+    background: #ffe5e5;
+    color: #d62839;
+    font-size: 14px;
+}
+
+.dashboard {
+    min-height: 100vh;
+    background: #f5f5f5;
+    padding: 35px 30px 60px;
+}
+
+.dashboard-header {
+    max-width: 1150px;
+    margin: 0 auto;
+    text-align: center;
+    position: relative;
+}
+
+.dashboard-brand {
+    display: block;
+}
+
+.dashboard-logo {
+    display: none;
+}
+
+.dashboard-brand h1 {
+    margin: 0;
+    font-size: 40px;
+    font-weight: 700;
+    color: #26384a;
+}
+
+.dashboard-brand p {
+    display: none;
+}
+
+
+/* LOGOUT BUTTON */
+
+.logout-btn {
+    position: absolute;
+    right: 0;
+    top: 55px;
+
+    border: none;
+    border-radius: 5px;
+    background: #dc3545;
+    color: white;
+
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 600;
+
+    cursor: pointer;
+}
+
+.logout-btn:hover {
+    background: #c82333;
+}
+
+
+/* MAIN CONTENT */
+
+.dashboard-main {
+    max-width: 1150px;
+    margin: 70px auto 0;
+}
+
+
+/* PRODUCT LIST HEADER */
+
+.page-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+}
+
+.page-heading h2 {
+    margin: 0;
+    font-size: 30px;
+    color: #26384a;
+}
+
+.page-heading p {
+    display: none;
+}
+
+.add-btn {
+    border: none;
+    border-radius: 5px;
+    background: #333;
+    color: white;
+
+    padding: 9px 16px;
+    font-size: 14px;
+    font-weight: 500;
+
+    cursor: pointer;
+}
+
+.add-btn:hover {
+    background: #222;
+}
+
+.table-card {
+    width: 100%;
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.10);
+    overflow-x: auto;
+}
+
+.product-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 16px;
+}
+
+.product-table th {
+    background: #333;
+    color: white;
+    text-align: left;
+    padding: 17px;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.product-table th:first-child {
+    border-top-left-radius: 2px;
+}
+
+.product-table th:last-child {
+    border-top-right-radius: 2px;
+}
+
+.product-table td {
+    padding: 17px;
+    border-bottom: 1px solid #ddd;
+    color: #222;
+    vertical-align: middle;
+}
+
+.product-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.product-table tbody tr:hover {
+    background: #fafafa;
+}
+
+.product-name {
+    font-size: 16px;
+    color: #222;
+}
+
+.product-description {
+    color: #222;
+}
+
+.price {
+    font-weight: normal;
+    white-space: nowrap;
+}
+
+.quantity {
+    white-space: nowrap;
+}
+
+.action-buttons {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.edit-btn,
+.delete-btn {
+    border: none;
+    background: none;
+    padding: 0;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.edit-btn {
+    color: #111;
+}
+
+.edit-btn:hover {
+    text-decoration: underline;
+}
+
+.delete-btn {
+    color: #dc3545;
+}
+
+.delete-btn:hover {
+    text-decoration: underline;
+}
+
+.error-message {
+    margin-bottom: 20px;
+    padding: 12px 15px;
+    background: #ffe5e5;
+    color: #d62839;
+    border-radius: 5px;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 50px 20px;
+    color: #666;
+    font-size: 16px;
+}
+
+.loading-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f5f5f5;
+    color: #555;
+    font-size: 18px;
+}
+
+.form-page {
+    min-height: 100vh;
+    background: #f5f5f5;
+    padding: 55px 30px;
+}
+
+.form-container {
+    max-width: 850px;
+    margin: 0 auto;
+}
+
+.form-card {
+    background: white;
+    border-radius: 12px;
+    padding: 35px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.10);
+}
+
+.form-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 30px;
+}
+
+.form-header h1 {
+    margin: 0;
+    color: #26384a;
+    font-size: 30px;
+}
+
+.form-header p {
+    margin: 8px 0 0;
+    color: #666;
+}
+
+.product-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+.primary-btn,
+.secondary-btn {
+    border: none;
+    border-radius: 5px;
+    padding: 12px 22px;
+    font-size: 15px;
+    font-weight: bold;
+}
+
+.primary-btn {
+    background: #333;
+    color: white;
+}
+
+.primary-btn:hover {
+    background: #222;
+}
+
+.primary-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.secondary-btn {
+    background: #e5e5e5;
+    color: #333;
+}
+
+.secondary-btn:hover {
+    background: #d5d5d5;
+}
+
+@media (max-width: 800px) {
+
+    .dashboard {
+        padding: 30px 20px 50px;
+    }
+
+    .dashboard-brand h1 {
+        font-size: 32px;
+    }
+
+    .dashboard-main {
+        margin-top: 85px;
+    }
+
+    .logout-btn {
+        top: 45px;
+        right: 0;
+    }
+
+    .page-heading {
+        align-items: flex-end;
+    }
+
+    .page-heading h2 {
+        font-size: 25px;
+    }
+
+    .table-card {
+        padding: 15px;
+    }
+
+    .product-table {
+        min-width: 750px;
+    }
+}
+
+
+@media (max-width: 600px) {
+
+    .login-card {
+        padding: 30px 25px;
+    }
+
+    .dashboard {
+        padding: 25px 15px 40px;
+    }
+
+    .dashboard-brand h1 {
+        font-size: 27px;
+    }
+
+    .dashboard-main {
+        margin-top: 85px;
+    }
+
+    .page-heading {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 15px;
+    }
+
+    .add-btn {
+        width: 100%;
+    }
+
+    .logout-btn {
+        position: static;
+        margin-top: 15px;
+    }
+
+    .dashboard-header {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .form-page {
+        padding: 25px 15px;
+    }
+
+    .form-card {
+        padding: 25px 20px;
+    }
+
+    .form-header {
+        align-items: flex-start;
+        gap: 15px;
+    }
+
+    .form-header h1 {
+        font-size: 25px;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .form-actions {
+        flex-direction: column-reverse;
+    }
+
+    .primary-btn,
+    .secondary-btn {
+        width: 100%;
+    }
+}

@@ -332,25 +332,22 @@ if ( ! function_exists('database_config'))
 	 * @return array<string,mixed>|null
 	 */
 	function database_config()
-	{
-		static $database;
+{
+    if (file_exists(APP_DIR . 'config/database.php'))
+    {
+        include APP_DIR . 'config/database.php';
 
-		if ( file_exists(APP_DIR . 'config/database.php') )
-		{
-			require_once APP_DIR . 'config/database.php';
+        if (isset($database) && is_array($database))
+        {
+            return $database;
+        }
+    }
+    else {
+        show_404('404 Not Found', 'The configuration file does not exist');
+    }
 
-			if ( isset($database)  OR is_array($database) )
-			{
-				foreach( $database as $key => $val )
-				{
-					$database[$key] = $val;
-				}
-
-				return $database;
-			}
-		} else
-			show_404('404 Not Found', 'The configuration file does not exist');
-	}
+    return null;
+}
 }
 
 if ( ! function_exists('route_config'))

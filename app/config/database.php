@@ -56,6 +56,7 @@ defined('PREVENT_DIRECT_ACCESS') OR exit('No direct script access allowed');
 |   $database variable.
 |   Example: $database['another_example'] = array('key' => 'value')
 */
+$database = [];
 
 $database['main'] = array(
     'driver'	=> getenv('DB_DRIVER') ?: '',
