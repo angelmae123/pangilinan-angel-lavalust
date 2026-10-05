@@ -549,3 +549,11 @@ button {
         width: 100%;
     }
 }
+.success-message {
+    margin-bottom: 20px;
+    padding: 12px 15px;
+    border-radius: 5px;
+    background: #e5f7e9;
+    color: #218838;
+    font-size: 14px;
+}

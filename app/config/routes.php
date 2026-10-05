@@ -59,6 +59,8 @@ $router->post('login', 'AuthApiController::login');
 $router->post('logout', 'AuthApiController::logout');
 $router->post('refresh', 'AuthApiController::refresh');
 
+$router->post('register', 'AuthApiController::create');
+
 
 // Protected profile
 $router->get('profile', 'AuthApiController::profile')

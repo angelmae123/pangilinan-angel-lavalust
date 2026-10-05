@@ -1,6 +1,6 @@
 import { useState } from "react";
 import api from "../api";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
 function Login() {
@@ -26,6 +26,8 @@ function Login() {
                     password,
                 }
             );
+
+            toast.success("Login successful! Redirecting to products...");
 
             const accessToken = response.data.access_token;
             const refreshToken = response.data.refresh_token;
@@ -96,6 +98,10 @@ function Login() {
                         className="login-button" type="submit" disabled={loading}>
                         {loading ? "Signing in..." : "Login"}
                     </button>
+                        <p className="register-link">
+                            Don't have an account?{" "}
+                            <Link to="/register">Register</Link>
+                        </p>
                 </form>
             </div>
         </div>
