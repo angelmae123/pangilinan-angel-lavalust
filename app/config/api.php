@@ -156,8 +156,13 @@ $config['products_table'] = 'products';
 | a browser, so set your real domain in production.
 |
 */
-$config['allow_origin'] = ['http://localhost:3000', 'http://localhost:5173','https://pangilinan-angel-lavalust.vercel.app', 'https://api-tester.marasigan.dev'];
-
+$config['allow_origin'] = [
+    'http://localhost:3000',
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'https://pangilinan-angel-lavalust.vercel.app',
+    'https://api-tester.marasigan.dev'
+];
 /*
 |--------------------------------------------------------------------------
 | Refresh Token Table
